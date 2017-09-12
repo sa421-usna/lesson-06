@@ -1,0 +1,474 @@
+---
+title: "Lesson 6. Input Data Analysis and Fitting Distributions"
+author: "Assoc. Prof. D. Phillips and N. Uhan"
+date: "SA421 -- Simulation Modeling -- Fall 2017"
+output:
+  html_notebook:
+    css: css/sa421.css
+---
+
+# Before we begin...
+
+Please be sure you have installed the following packages:
+`ggplot2`, `readxl`, `dplyr`, `tidyr`, `fitdistrplus`
+
+# Overview
+
+In this lesson, we focus on how to model a given set of data with a probability distribution. __Choosing a distribution to represent data is an art:__ there is no algorithm which produces a "correct" distribution that fits a given set of input data. Two of the factors that complicate choosing a distribution are:
+
+* the large number of probability distributions that exist;
+
+* assessing how well any particular choice of distribution models the data.
+
+In this course, we will primarily focus on the distributions presented in this lesson to model our data. We will also use the methods presented as ways to assess the distributions we choose. Please be aware that, when possible, **you should consult an expert in statistics when analyzing data in the "real world"!**
+
+
+# Some relevant distributions 
+
+Before fitting distributions, we need to be familiar with the distributions we will consider.
+For each distribution we describe the following:
+
+* the density function and cumulative distribution function (cdf) -- __note their domains!__;
+
+* the mean and variance;
+
+* typical situations where they occur.
+
+The key goal is to understand when a particular distribution is 
+
+* applicable from the context, and 
+
+* applicable from examining the input data itself.
+
+
+## The uniform distribution
+
+Recall that the uniform distribution on an interval $(a, b)$ represents a random variable where every value on the interval $(a, b)$ is equally likely. Note that $a < b$.  
+
+Let $X$ be a uniform random variable on the interval $(a,b)$. The density function is
+$$
+f(x) = \left\{ \begin{array}{ll}
+\frac{1}{b - a}, &  a \leq x \leq b, \\
+0 & \mbox{otherwise.} \end{array} \right.
+$$
+The cdf is
+$$
+F(x) = P[X \leq x] = \left\{ \begin{array}{ll}
+0 & x < a, \\
+\frac{x - a}{b - a}, &  a \leq x \leq b, \\
+1 & x \geq b. \end{array} \right.
+$$
+Note that the domain of the density and cdf is the whole real line.
+
+The mean $\mu$ and variance $\sigma^2$ of $X$ are
+$$
+\mu = a + \frac{1}{2}(b - a) = \frac{1}{2}(a + b), \quad \quad \quad \sigma^2 = \frac{1}{12}(b-a)^2.
+$$
+
+
+For example, if $a = 1$ and $b = 5$ then on the interval $[a,b]$, $f(x) = \frac{1}{4}$ and $F(x) = \frac{x - 1}{4}$. 
+
+The plots of the density and distribution functions for this example are:
+
+```{r}
+# Plotting library
+library(ggplot2)
+
+# Uniform (1,5)
+ggplot(data.frame(x = c(0, 6)), aes(x = x)) + 
+  stat_function(fun = dunif, args = list(min = 1, max = 5), n = 500, aes(color = 'density')) +
+  stat_function(fun = punif, args = list(min = 1, max = 5), aes(color = 'cdf')) +
+  labs(x = "x value", y = "density / probability", 
+       title = "Uniform distribution on [1,5]",
+       color = "")
+```
+
+Uniform distributions are useful in the following situations:
+
+* <!-- Write your notes here -->
+
+* <!-- Write your notes here -->
+
+* <!-- Write your notes here --> 
+
+
+## The exponential and gamma distributions
+
+The exponential distribution is a special case of the gamma distribution and both are often used to model wait times for different processes. We first describe the gamma distribution and illustrate how the exponential is a special case. 
+
+Let $X$ denote a gamma random variable. The gamma distribution has two parameters: __shape__ $\alpha$ and __rate__ $\beta$.  The reason for its name is that both its density and cdf are defined in terms of the gamma function $\Gamma$. For a positive real number $z$, 
+$$
+\Gamma(z) = \int_0^\infty x^{z-1} e^{-x} dx
+$$
+(If $z$ is an integer $\Gamma(z) = z!$). The density function is defined for $x>0$ as:
+$$
+f(x) = \frac{\beta^\alpha x^{\alpha-1} e^{-\beta x}}{\Gamma(\alpha)}.
+$$
+The cdf can be found by integrating the density, i.e., 
+$$
+F(x) = P[X \leq x] = \int_{0}^x f(t) dt
+$$
+Note that the domain of the density and cdf is the __positive__ real numbers.
+
+The mean $\mu$ and variance $\sigma^2$ of $X$ are
+$$
+\mu = \frac{\alpha}{\beta}, \quad \quad \quad \sigma^2 = \frac{\alpha}{\beta^2}.
+$$
+__When $\alpha=1$, then the gamma distribution is in fact the exponential distribution with mean $\frac{1}{\beta}$.__
+
+Here are some density and cdf plots of different gamma distributions:
+
+```{r}
+# Densities of gamma distributions
+ggplot(data.frame(x = c(0, 20)), aes(x = x)) +
+  stat_function(fun = dgamma, args = list(shape = 1, rate = 1),   aes(color = '(1, 1)')) +
+  stat_function(fun = dgamma, args = list(shape = 1, rate = 0.5), aes(color = '(1, 0.5)')) +
+  stat_function(fun = dgamma, args = list(shape = 1, rate = 2),   aes(color = '(1, 2)')) +
+  stat_function(fun = dgamma, args = list(shape = 5, rate = 0.5), aes(color = '(5, 0.5)')) +
+  stat_function(fun = dgamma, args = list(shape = 5, rate = 2),   aes(color = '(5, 2)')) +
+  stat_function(fun = dgamma, args = list(shape = 9, rate = 0.5), aes(color = '(9, 0.5)')) +
+  stat_function(fun = dgamma, args = list(shape = 9, rate = 2),   aes(color = '(9, 2)')) + 
+  labs(title = 'Gamma densities with (shape, rate)',
+       x = 'x value',
+       y = 'Density',
+       color = '(shape, rate)')
+
+# cdfs of gamma distributions
+ggplot(data.frame(x = c(0, 20)), aes(x = x)) +
+  stat_function(fun = pgamma, args = list(shape = 1, rate = 1),   aes(color = '(1, 1)')) +
+  stat_function(fun = pgamma, args = list(shape = 1, rate = 0.5), aes(color = '(1, 0.5)')) +
+  stat_function(fun = pgamma, args = list(shape = 1, rate = 2),   aes(color = '(1, 2)')) +
+  stat_function(fun = pgamma, args = list(shape = 5, rate = 0.5), aes(color = '(5, 0.5)')) +
+  stat_function(fun = pgamma, args = list(shape = 5, rate = 2),   aes(color = '(5, 2)')) +
+  stat_function(fun = pgamma, args = list(shape = 9, rate = 0.5), aes(color = '(9, 0.5)')) +
+  stat_function(fun = pgamma, args = list(shape = 9, rate = 2),   aes(color = '(9, 2)')) + 
+  labs(title = 'Gamma cdfs with (shape, rate)',
+       x = 'x value',
+       y = 'cdf',
+       color = '(shape, rate)')
+```
+
+Gamma distributions are widely used to model:
+
+* <!-- Write your notes here -->
+
+* <!-- Write your notes here -->
+
+* <!-- Write your notes here -->
+
+
+## The normal distribution
+
+The normal distribution is perhaps the most significant distribution due to the central limit theorem: under the assumption of finite variance, independent samples of a distribution converges to a normal distribution. 
+
+Let $X$ denote a normal random variable. Any normal distribution is determined by its mean $\mu$ and standard deviation $\sigma$. 
+
+The density function is defined for any real $x$ as:
+$$
+f(x) = \frac{1}{\sqrt{2\pi\sigma^2}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}.
+$$
+The cdf can be found by integrating the density, i.e., 
+$$
+P[X \leq x] = F(x) = \int_{0}^x f(t) dt
+$$
+Note the domain of the density function and cdf is the whole real line.
+
+The __standard normal distribution__ is when the mean is $\mu=0$ and standard deviation is $\sigma = 1$.
+
+Here are some density and cdf plots of different normal distributions:
+
+```{r}
+# Densities of Normal distributions
+ggplot(data.frame(x = c(-10, 10)), aes(x = x)) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1),   aes(color = '(0, 1)')) +
+  stat_function(fun = dnorm, args = list(mean = -1, sd = 1), aes(color = '(-1, 1)')) +
+  stat_function(fun = dnorm, args = list(mean = -1, sd = 2),   aes(color = '(-1, 2)')) +
+  stat_function(fun = dnorm, args = list(mean = 3, sd = 2), aes(color = '(3, 2)')) +
+  stat_function(fun = dnorm, args = list(mean = 3, sd = 5),   aes(color = '(3, 5)')) +
+  labs(title = 'Normal densities with (mean, sd)',
+       x = 'x value',
+       y = 'Density',
+       color = '(shape, rate)')
+
+# cdfs of Normal distributions
+ggplot(data.frame(x = c(-10, 10)), aes(x = x)) +
+  stat_function(fun = pnorm, args = list(mean = 0, sd = 1),   aes(color = '(0, 1)')) +
+  stat_function(fun = pnorm, args = list(mean = -1, sd = 1), aes(color = '(-1, 1)')) +
+  stat_function(fun = pnorm, args = list(mean = -1, sd = 2),   aes(color = '(-1, 2)')) +
+  stat_function(fun = pnorm, args = list(mean = 3, sd = 2), aes(color = '(3, 2)')) +
+  stat_function(fun = pnorm, args = list(mean = 3, sd = 5),   aes(color = '(3, 5)')) +
+  labs(title = 'Normal densities with (mean, sd)',
+       x = 'x value',
+       y = 'Density',
+       color = '(shape, rate)')
+```
+
+As stated before, the normal distribution is useful as it represents what "ordinary" randomness converges to. With respect to modeling, its uses include:
+
+* <!-- Write your notes here -->
+
+* <!-- Write your notes here -->
+
+
+# Choosing a distribution
+
+Now that we have reviewed a set of distributions, which one should we use? We should consider __both__ the context and the data.
+
+We illustrate with an example. First, let's load the arrival times collected for the Nimitz Coffee Bar:
+
+```{r}
+# Load readxl - package for reading Excel files
+library(readxl)
+
+# Read arrival times from Excel file
+
+```
+
+Next, let's compute the interarrival times based on these arrival times: 
+
+```{r}
+# Load dplyr
+library(dplyr)
+
+# Sort arrival times 
+# Compute interarrival times in seconds, convert to numeric 
+# Assume that simultaneous arrivals are in fact 1 second apart
+# Remove NA data
+
+
+# What does arrival.data look like now?
+
+```
+
+Note that this code makes the assumption that there is at least one second between arrivals.
+
+
+## Histograms
+
+Visually inspecting the data is key to finding a good fitted distribution. A histogram is a way of depicting the frequency of data points in predefined intervals, or __bins__. 
+
+We can plot a histogram of the interarrival times as follows:
+
+```{r}
+# Plot a histogram of the interarrival times
+
+```
+
+Based on this histogram, what do you think is an appropriate distribution for the interarrival times?
+
+You should be careful with the number of bins in the histogram! You can use the `bins` parameter of `geom_histogram()` to adjust the number of bins. The __Freedman-Diaconis method__ for determining the number of bins used in a histogram is robust and widely used. The method calculates the number of bins via the formula
+$$
+b = 2\frac{q}{n^{1/3}},
+$$
+where $b$ denotes bin size, $q$ denotes the difference between the $75^{\mbox{th}}$ and $25^{\mbox{th}}$ percentiles, and $n$ denotes the number of samples. 
+
+So, for our interarrival time data, we can do this:
+
+```{r}
+# Get number of bins suggested by Freedman-Diaconis method
+
+
+# Plot histogram for each distribution using Freedman-Diaconis
+
+
+```
+
+
+# Fitting the Distribution
+
+We know that interarrival times are canonically modeled using exponential or gamma distributions. After inspecting the data visually, this makes sense. So, let's try it out!
+
+But... the gamma distribution has two parameters, shape $\alpha$ and rate $\beta$. What values should we use for these parameters? The standard method is to use __maximum likelihood estimation__.
+
+Suppose $x_1, \dots, x_n$ are observations of $n$ i.i.d. random variables that we want to fit to a continuous distribution with density $f$ and parameter vector $\theta$.  For example, for the gamma distribution, $\theta = (\alpha, \beta)$. Then the __likelihood function__ for an observed value $x$ is
+$$
+L(\theta) = f(x_1 | \theta) f(x_2 | \theta) \cdots f(x_n | \theta).
+$$
+Roughly speaking, the likelihood function measures how likely the observed data comes from the distribution with density $f$ and parameter vector $\theta$. We want to maximize this likelihood. The maximum likelihood value $\widehat{L}$ is:
+$$
+\widehat{L} = \max\{L(\theta) : \theta \in \Theta \}
+$$
+where $\Theta$ denotes the set of possible parameter values. 
+
+`fitdistrplus` is a popular R package to perform distribution fitting. [Here is the documentation for `fitdistrplus`.](https://cran.r-project.org/web/packages/fitdistrplus/fitdistrplus.pdf) The function `fitdist()` does a lot of the work for us.  Maximum likelihood is the default parameter estimation method in `fitdist()`.
+
+Let's use maximum likelihood to fit our interarrival times to exponential and gamma distributions:
+
+```{r}
+# Load fitdistrplus package
+library('fitdistrplus')
+
+# Find maximum likelihood estimator for exponential distribution
+
+# Find maximum likelihood estimator for gamma distribution
+
+```
+
+Using maximum likelihood estimation, `fitdist()` found the interarrival times best fit: 
+
+* an exponential distribution with rate parameter <!-- Write your notes here -->
+
+* a gamma distribution with shape <!-- Write your notes here --> and rate <!-- Write your notes here-->. 
+
+
+# Evaluating the fit
+
+Given the fits for some different distributions, we need to evaluate the fit and choose one for our simulation. 
+
+* First, we evaluate the fit __visually__ by comparing the histograms of our observations with the theoretical density functions of our fitted distributions. 
+
+* Next, we discuss two __goodness-of-fit criteria__ that show how to evaluate the fit while still taking into account the distribution complexity, i.e., number of parameters. The fit we wish to use should have the fewest parameters while still representing the data accurately. 
+
+* Finally, we conclude with the __Kolmogorov-Smirnov statistic__ which is a test of whether the data is "significantly" different than the fitted distributions. 
+
+As previously stated, proving a fit is correct is impossible. __Instead, our goal is to compile evidence that the fit we use is an appropriate choice.__
+
+
+## Visual inspection
+
+There are various statistical tests to evaluate how well a distribution models some data. However, visual inspection can go a long way.
+
+Let's plot the histogram of the interarrival time data and the density functions of the fitted distributions:
+
+```{r}
+# Plot a histogram of the interarrival time data along with
+# the density functions of the fitted distributions
+
+```
+
+Based on these graphs, which distribution do you think is a better fit?
+
+
+## Goodness-of-fit criteria
+
+The __Akaike information criterion__ and the __Bayesian information criterion__ are measures of the _relative_ quality of statistical models (e.g. distributions) for a given set of data. They are defined as:
+$$
+\text{AIC} = 2k - 2 \ln(\widehat{L})\\
+\text{BIC} = \ln(n)k - 2\ln(\widehat{L})
+$$
+where $k$ is the number of estimated parameters (i.e. the number of components in $\theta$), and $n$ is the number of observations.
+
+The distribution with the __lowest AIC or BIC__ is preferred. Note that:
+
+* As the maximum likelihood $\widehat{L}$ increases, the AIC and BIC decrease.
+
+* As the number of parameters $k$ increases, both AIC and BIC increase: AIC and BIC penalize more complex distributions to discourage overfitting.
+
+* As $n$ increases, BIC increases, and magnifies the complexity penalty $\ln(n) k$.
+
+To compute these goodness-of-fit criteria in R, we can use the function `gofstat()` from `fitdistrplus`. We use this function on our example as follows:
+
+```{r}
+
+```
+
+So, based on the AIC or BIC, which distribution would you choose to model the interarrival times?
+
+
+## The empirical cdf and the Kolmogorov-Smirnov statistic
+
+Suppose that $x_1, \dots, x_n$ are observations of $n$ i.i.d. random variables that we fit to some continuous distribution with _cdf_ $F$. 
+The __empirical cdf__ of these observations is
+$$
+\widehat{F}(a) = \frac{\text{number of $x_j$'s} \le a}{n}
+$$
+
+We can evaluate how well our fitted distributions model the data by comparing their cdfs with the empirical cdf $\widehat{F}$ of the observations $x_1, \dots, x_n$. 
+Let's plot them using `cdfcomp` from `fitdistrplus`:
+
+```{r}
+# Plot the empirical cdf of the interarrival time data along with
+# the cdfs of the fitted distributions
+
+```
+
+The Kolmogorov-Smirnov (K-S) statistic compares the empirical cdf $\widehat{F}$ of the observations $x_1, \dots, x_n$ with the cdf $F$ of some proposed distribution. 
+The K-S statistic is defined as
+$$
+d = \max_{-\infty < x < \infty} | F(x) - \widehat{F}(x) | 
+$$
+
+The K-S goodness-of-fit test tests the null hypothesis that the observations are indeed samples of the proposed distribution with cdf $F$. `gofstat()` automatically determines whether this test is rejected or not rejected at the 0.05 significance level. We can see the results by looking at the following variable:
+
+```{r}
+# Reject null hypothesis of K-S test at significance level 0.05?
+
+```
+
+
+## How do we really know if a histogram matches a distribution? 
+
+_Note._ The R code in this section is somewhat advanced. We will revisit some of these constructs later in the semester as needed.
+
+To examine this, we first generate some random data from the different distributions we discussed with a mean of 3.
+
+```{r}
+# Generate some sample data
+set.seed(1133)
+n = 1000
+random.data = data.frame(unif = runif(n, min=0, max=6),
+                         exp = rexp(n, rate=1/3),
+                         gamma = rgamma(n, 15, rate=5),
+                         gamma2 = rgamma(n, 0.45, rate=0.15),
+                         norm = rnorm(n, mean=3, sd=1))
+
+# What does this data look like?
+print(random.data)
+```
+
+Next, we will convert this data set into its __long form__:
+
+```{r}
+# Load tidyr
+library(tidyr)
+
+# Convert to long-form data
+random.data.long <- gather(random.data, 'dist', 'value')
+
+# What does this long-form data look like?
+print(random.data.long)
+```
+
+This allows us to use `dplyr`'s `group_by()` to quickly get the mean of each sample.
+
+```{r}
+# Get the mean for each distribution
+# Note the means of all of them!
+random.data.long %>%
+  group_by(dist) %>%
+  summarize(mean = mean(value))
+```
+
+Note the observed sample means are all close to 3.
+
+The number of bins can greatly influence how the histogram looks. Play with the number of bins in the following histograms to get a sense of how this can influence how the resulting histograms will look.
+
+```{r}
+# Plot histogram for each distribution
+ggplot(random.data.long) + 
+  geom_histogram(aes(x = value), bins=15) +
+  facet_wrap(c('dist'))
+```
+
+Now look at the histograms with the FD rule applied. Note how the scale also changes how the histograms can look.
+
+```{r}
+fdbin.num <- random.data.long %>%
+  group_by(dist) %>%
+  summarize(fdbins = nclass.FD(value))
+
+ggplot(random.data) +
+  geom_histogram(aes(x = exp), bins=fdbin.num[1,2])
+
+ggplot(random.data) +
+  geom_histogram(aes(x = gamma), bins=fdbin.num[2,2])
+
+ggplot(random.data) +
+  geom_histogram(aes(x = gamma2), bins=fdbin.num[3,2])
+
+ggplot(random.data) +
+  geom_histogram(aes(x = norm), bins=fdbin.num[4,2])
+  
+ggplot(random.data) +
+  geom_histogram(aes(x = unif), bins=fdbin.num[5,2])
+```
